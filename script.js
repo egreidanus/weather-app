@@ -15,24 +15,24 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Initialize
   async function loop(data) {
-    debug("loop start", data);
+    debug("loop start", data.debugging);
 
     // Check if the app is initialized
     if (!data.initialized) {
-      debug("App not initialized", data);
+      debug("App not initialized", data.debugging);
 
       // Check if geolocation is available
       if (navigator.geolocation || "geolocation" in navigator) {
 
-        debug("Navigator available", data);
+        debug("Navigator available", data.debugging);
 
         // Get the user position
         const position = await new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject);
         });
 
-        debug("Got user location using navigator.geolocation", data);
-        debug(position, data);
+        debug("Got user location using navigator.geolocation", data.debugging);
+        debug(position, data.debugging);
 
         // Store the user's position
         data.weather.location.latitude = position.coords.latitude;
@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         // Mark the app as initialized
         data.initialized = true;
 
-        debug("App marked as initialized", data);
+        debug("App marked as initialized", data.debugging);
       } else {
         // If the function cannot initialize then return the data
         return data;
@@ -52,14 +52,14 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     if (data.initialized) {
-      debug("App is initialized", data);
+      debug("App is initialized", data.debugging);
 
       // Fetch weather information
       var weatherInfo = await getWeatherInformation(data.weather.location.latitude, data.weather.location.longitude);
 
       // Check if weather information is available
       if (weatherInfo && weatherInfo.current && weatherInfo.current_units) {
-        debug("Weather information is available", data);
+        debug("Weather information is available", data.debugging);
 
         // Store the weather information
         data.weather.temperature_2m = weatherInfo.current.temperature_2m;
@@ -77,14 +77,16 @@ document.addEventListener("DOMContentLoaded", async function () {
     return data;
   }
 
-  function debug(message, data) {
-    if (data.debugging) {
+
+  // The debug function is used to log information to the console if the app is in debug mode
+  function debug(message, isDebug = true) {
+    if (isDebug) {
       console.log(message);
     }
   }
 
   async function updateInformation(data) {
-    debug("Updating information on screen", data);
+    debug("Updating information on screen", data.debugging);
     document.getElementById("temperature").innerText = data.weather.temperature_2m + data.weather.temperature_2m_unit;
     document.getElementById("city_name").innerText = data.weather.location.city_name;
   }
