@@ -1,7 +1,8 @@
-document.addEventListener("DOMContentLoaded", function () {
-  async function update() {
-    // The weather object to store weather information
-    const weather = {
+document.addEventListener("DOMContentLoaded", async function () {
+  var data = {
+    initialized: false,
+    debugging: true,
+    weather: {
       location: {
         city_name: null,
         longitude: null,
@@ -9,53 +10,85 @@ document.addEventListener("DOMContentLoaded", function () {
       },
       temperature_2m: null,
       temperature_2m_unit: null,
-    };
+    }
+  };
 
-    // Check if geolocation is available
-    if (navigator.geolocation || "geolocation" in navigator) {
+  // Initialize
+  async function loop(data) {
+    debug("loop start", data.debugging);
 
-      // Get the user's current position
-      navigator.geolocation.getCurrentPosition(async function (position) {
+    // Check if the app is initialized
+    if (!data.initialized) {
+      debug("App not initialized", data.debugging);
+
+      // Check if geolocation is available
+      if (navigator.geolocation || "geolocation" in navigator) {
+
+        debug("Navigator available", data.debugging);
+
+        // Get the user position
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject);
+        });
+
+        debug("Got user location using navigator.geolocation", data.debugging);
+        debug(position, data.debugging);
 
         // Store the user's position
-        weather.location.longitude = position.coords.longitude;
-        weather.location.latitude = position.coords.latitude;
+        data.weather.location.latitude = position.coords.latitude;
+        data.weather.location.longitude = position.coords.longitude;
 
-        // Fetch city name if it hasn't been fetched yet
-        if (!weather.location.city_name) {
-          weather.location.city_name = await getCityName(weather.location.latitude, weather.location.longitude);
-        }
+        // Fetch the user's city name
+        data.weather.location.city_name = await getCityName(data.weather.location.latitude, data.weather.location.longitude);
 
-        console.log("Latitude: " + weather.location.latitude + ", Longitude: " + weather.location.longitude);
+        // Mark the app as initialized
+        data.initialized = true;
 
-        // Fetch weather information
-        var weatherInfo = await getWeatherInformation(weather.location.latitude, weather.location.longitude);
+        debug("App marked as initialized", data.debugging);
+      } else {
+        // If the function cannot initialize then return the data
+        return data;
+      }
+    }
 
-        // Check if weather information is available
-        if (weatherInfo && weatherInfo.current && weatherInfo.current_units) {
+    if (data.initialized) {
+      debug("App is initialized", data.debugging);
 
-          // Store the weather information
-          weather.temperature_2m = weatherInfo.current.temperature_2m;
-          weather.temperature_2m_unit = weatherInfo.current_units.temperature_2m;
+      // Fetch weather information
+      var weatherInfo = await getWeatherInformation(data.weather.location.latitude, data.weather.location.longitude);
 
-          // Update the weather display
-          await updateWeatherDisplayInformation(weather);
-        }
+      // Check if weather information is available
+      if (weatherInfo && weatherInfo.current && weatherInfo.current_units) {
+        debug("Weather information is available", data.debugging);
 
-        // Log the weather information
-        console.log(weatherInfo);
-        console.log(weather);
-      });
-    } else {
-      // When there is no location, log and alert
-      console.log("Geolocation is not available.");
-      alert("Geolocation is not available.");
+        // Store the weather information
+        data.weather.temperature_2m = weatherInfo.current.temperature_2m;
+        data.weather.temperature_2m_unit = weatherInfo.current_units.temperature_2m;
+      }
+
+      // Update the weather display
+      updateInformation(data);
+    }
+
+    // Print the data to the console
+    console.log(data);
+
+    // Return the data
+    return data;
+  }
+
+
+  // The debug function is used to log information to the console if the app is in debug mode
+  function debug(message, isDebug = true) {
+    if (isDebug) {
+      console.log(message);
     }
   }
 
-  async function updateWeatherDisplayInformation(weather) {
-    document.getElementById("temperature").innerText = weather.temperature_2m + weather.temperature_2m_unit;
-    document.getElementById("city_name").innerText = weather.location.city_name;
+  async function updateInformation(data) {
+    debug("Updating information on screen", data.debugging);
+    document.getElementById("temperature").innerText = data.weather.temperature_2m + data.weather.temperature_2m_unit;
+    document.getElementById("city_name").innerText = data.weather.location.city_name;
   }
 
   async function getWeatherInformation(latitude, longitude) {
@@ -109,6 +142,9 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Run the update function and set an interval to update every 10 seconds
-  update();
-  setInterval(update, 10000);
+  data = await loop(data);
+
+  setInterval(async function () {
+    data = await loop(data);
+  }, 10000);
 });
