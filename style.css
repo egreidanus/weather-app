@@ -7,11 +7,11 @@ body {
     justify-content: center;
     align-items: center;
     background-color: gainsboro;
-    background-image: url("images/New\ folder/clouds: sky partly cloudy little gap cloudscape background -421331016.webp");
+    background-image: url("images/New\ folder/clouds-sky-partly-cloudy-little-gap-cloudscape-background-421331016.webp");
 }
 
 .location {
-    position: absolute;
+    position: center top;
     top: 30px;
     left: 40%;
     transform: translateX(-50%), translateY(-10px);
