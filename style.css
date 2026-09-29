@@ -1,0 +1,66 @@
+
+body {
+
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: gainsboro;
+
+}
+
+.location {
+    position: absolute;
+    top: 0px;
+    left: 50%;
+    transform: translateX(-50%), translateY(-10px);
+
+}
+
+.frame {
+    width: 50%;
+    height: 450px;
+
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows:  repeat(3, 1fr);
+    gap: 20px;
+
+    border-radius: 20px;
+    margin: 10px;
+    padding: 20px;
+    background-color: rgba(230, 230, 230, 0.5);
+    backdrop-filter: blur(8px);
+    box-sizing: border-box;
+
+
+}
+
+.card {
+    padding: 20px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    background-color: gainsboro;
+
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+
+
+/*Cards*/
+.temperature {
+     grid-column: 1 / -1;
+     min-height: 200px;
+
+
+}
+
+.time-line {
+    grid-column: 1 / -1;
+
+}
