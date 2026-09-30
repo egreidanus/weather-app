@@ -7,11 +7,7 @@ body {
     justify-content: center;
     align-items: center;
     background-color: gainsboro;
-<<<<<<< HEAD
-    background-image: url("images/New\ folder/clouds-sky-partly-cloudy-little-gap-cloudscape-background-421331016.webp");
-=======
-    background-image: url("images/bg/clouds-sky-partly-cloudy-little-gap-cloudscape-background-421331016.webp");
->>>>>>> origin
+    background-image: url("images/backgrounds/sunny_weather.jpg");
 }
 
 .location {
