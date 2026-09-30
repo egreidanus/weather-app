@@ -1,147 +1,131 @@
-document.addEventListener("DOMContentLoaded", async function () {
-  var data = {
-    initialized: false,
-    debugging: true,
-    weather: {
-      location: {
-        city_name: null,
-        longitude: null,
-        latitude: null,
-      },
-      temperature_2m: null,
-      temperature_2m_unit: null,
-    }
-  };
+const locationService = (function () {
+  let position = null;
 
-  // Initialize
-  async function loop(data) {
-    debug("loop start", data.debugging);
-
-    // Check if the app is initialized
-    if (!data.initialized) {
-      debug("App not initialized", data.debugging);
-
-      // Check if geolocation is available
-      if (navigator.geolocation || "geolocation" in navigator) {
-
-        debug("Navigator available", data.debugging);
-
-        // Get the user position
-        const position = await new Promise((resolve, reject) => {
+  async function init() {
+    if ("geolocation" in navigator) {
+      try {
+        position = await new Promise((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject);
         });
-
-        debug("Got user location using navigator.geolocation", data.debugging);
-        debug(position, data.debugging);
-
-        // Store the user's position
-        data.weather.location.latitude = position.coords.latitude;
-        data.weather.location.longitude = position.coords.longitude;
-
-        // Fetch the user's city name
-        data.weather.location.city_name = await getCityName(data.weather.location.latitude, data.weather.location.longitude);
-
-        // Mark the app as initialized
-        data.initialized = true;
-
-        debug("App marked as initialized", data.debugging);
-      } else {
-        // If the function cannot initialize then return the data
-        return data;
+      } catch (error) {
+        console.error("Error while retrieving location:", error);
       }
-    }
-
-    if (data.initialized) {
-      debug("App is initialized", data.debugging);
-
-      // Fetch weather information
-      var weatherInfo = await getWeatherInformation(data.weather.location.latitude, data.weather.location.longitude);
-
-      // Check if weather information is available
-      if (weatherInfo && weatherInfo.current && weatherInfo.current_units) {
-        debug("Weather information is available", data.debugging);
-
-        // Store the weather information
-        data.weather.temperature_2m = weatherInfo.current.temperature_2m;
-        data.weather.temperature_2m_unit = weatherInfo.current_units.temperature_2m;
-      }
-
-      // Update the weather display
-      updateInformation(data);
-    }
-
-    // Print the data to the console
-    console.log(data);
-
-    // Return the data
-    return data;
-  }
-
-
-  // The debug function is used to log information to the console if the app is in debug mode
-  function debug(message, isDebug = true) {
-    if (isDebug) {
-      console.log(message);
+    } else {
+      console.error("navigator.geolocation is not available in your browser.");
     }
   }
 
-  async function updateInformation(data) {
-    debug("Updating information on screen", data.debugging);
-    document.getElementById("temperature").innerText = data.weather.temperature_2m + data.weather.temperature_2m_unit;
-    document.getElementById("city_name").innerText = data.weather.location.city_name;
+  async function getCoords() {
+    if (position !== null) {
+      return {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      };
+    } else {
+      return {
+        latitude: null,
+        longitude: null
+      };
+    }
+  }
+
+  async function getCityName() {
+    if (position !== null) {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=nl`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        return data.city || data.locality || "Onbekende locatie";
+      } catch (error) {
+        console.error("Error while retrieving cityname: ", error);
+      }
+    }
+    return "Onbekende locatie";
+  }
+
+  return {
+    init,
+    getCoords,
+    getCityName
+  };
+})();
+
+const weatherService = (function () {
+  async function callWeatherApi(latitude, longitude, endpoint, params = {}) {
+    const queryParams = new URLSearchParams({
+      latitude: latitude,
+      longitude: longitude,
+      ...params
+    });
+
+    const apiUrl = `https://api.open-meteo.com/v1/${endpoint}?${queryParams.toString()}`;
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      return await response.json();
+    } catch (error) {
+      console.error("Error while calling the weather API:", error);
+    }
   }
 
   async function getWeatherInformation(latitude, longitude) {
     return await callWeatherApi(latitude, longitude, "forecast", {
-      "current": "temperature_2m",
+      "current": "temperature_2m"
     });
   }
 
-  async function getCityName(latitude, longitude) {
-    // localityLanguage=nl ensures the city name is returned in Dutch if available
-    const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=nl`;
+  return {
+    getWeatherInformation
+  };
+})();
 
-    try {
-      const response = await fetch(url);
-      const data = await response.json();
-
-      // BigDataCloud provides a clean 'city' or 'locality' property
-      return data.city || data.locality || "Unknown location";
-    } catch (error) {
-      console.error("Error fetching city name:", error);
-      return "Unknown location";
+document.addEventListener("DOMContentLoaded", async function () {
+  let data = {
+    weather: {
+      location: { latitude: null, longitude: null },
+      temperature_2m: "-",
+      temperature_2m_unit: "°C"
     }
-  }
+  };
 
-  async function callWeatherApi(latitude, longitude, endpoint, params = {}) {
-    var apiUrl = `https://api.open-meteo.com/v1/${endpoint}`;
+  async function loop(currentData) {
+    let coords = await locationService.getCoords();
 
-    var queryParams = {
-      latitude: latitude,
-      longitude: longitude,
-      ...params
-    };
+    if (coords.latitude === null) {
+      await locationService.init();
+      coords = await locationService.getCoords();
+    }
 
-    apiUrl = `${apiUrl}?${new URLSearchParams(queryParams).toString()}`;
+    if (coords.latitude !== null) {
+      currentData.weather.location.latitude = coords.latitude;
+      currentData.weather.location.longitude = coords.longitude;
 
-    console.log("API URL:", apiUrl);
+      const weatherInfo = await weatherService.getWeatherInformation(coords.latitude, coords.longitude);
 
-    return fetch(apiUrl, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json"
+      if (weatherInfo && weatherInfo.current && weatherInfo.current_units) {
+        currentData.weather.temperature_2m = weatherInfo.current.temperature_2m;
+        currentData.weather.temperature_2m_unit = weatherInfo.current_units.temperature_2m;
       }
-    })
-    .then(response => response.json())
-    .then(data => {
-      return data;
-    })
-    .catch(error => {
-      console.error("Error:", error);
-    });
+
+      await updateInformation(currentData);
+    }
+
+    return currentData;
   }
 
-  // Run the update function and set an interval to update every 10 seconds
+  async function updateInformation(currentData) {
+    document.getElementById("temperature").innerText = currentData.weather.temperature_2m + currentData.weather.temperature_2m_unit;
+    document.getElementById("city_name").innerText = await locationService.getCityName();
+  }
+
   data = await loop(data);
 
   setInterval(async function () {
