@@ -1,47 +1,130 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Weather app</title>
-	 <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f7f9ff">
+    <meta name="color-scheme" content="light dark">
+    <title>Weather</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:opsz,wght,ROND@6..144,100..1000,0..100&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..500,0..1,0&display=block">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="frame">
-        <div class="card temperature">
-            <h1 id="temperature"></h1>
+    <div class="app" id="app" data-state="loading">
+        <header class="top-app-bar">
+            <div class="top-app-bar-headline">
+                <h1 class="location">
+                    <span class="icon" aria-hidden="true">location_on</span>
+                    <span id="city_name" class="skeleton-text">Locating</span>
+                </h1>
+                <p class="clock">
+                    <time id="clock_time">--:--</time>
+                    <span id="clock_date"></span>
+                </p>
+            </div>
+
+            <button type="button" class="icon-button" data-action="refresh" aria-label="Refresh weather data" title="Refresh">
+                <span class="icon" aria-hidden="true">refresh</span>
+            </button>
+        </header>
+
+        <main class="layout">
+            <section class="hero" aria-label="Current weather" style="--index: 0">
+                <div class="hero-content">
+                    <p id="current_description" class="hero-condition skeleton-text">Loading weather</p>
+                    <p id="temperature" class="hero-temperature">--°</p>
+                    <p id="temperature_range" class="hero-range skeleton-text">H --° · L --°</p>
+                </div>
+                <span id="current_icon" class="icon hero-icon" aria-hidden="true"></span>
+            </section>
+
+            <section class="panel hourly-panel" id="hourly_panel" aria-labelledby="hourly_title" style="--index: 1">
+                <div class="panel-header">
+                    <div>
+                        <h2 id="hourly_title" class="panel-title">Hourly forecast</h2>
+                        <p id="hourly_subtitle" class="panel-subtitle">Next 24 hours</p>
+                    </div>
+
+                    <div class="segmented-button" role="group" aria-label="Hourly forecast metric">
+                        <button type="button" data-metric="temperature" aria-pressed="true">
+                            <span class="icon" aria-hidden="true">check</span>Temp
+                        </button>
+                        <button type="button" data-metric="precipitation" aria-pressed="false">
+                            <span class="icon" aria-hidden="true">check</span>Rain
+                        </button>
+                        <button type="button" data-metric="wind" aria-pressed="false">
+                            <span class="icon" aria-hidden="true">check</span>Wind
+                        </button>
+                    </div>
+                </div>
+
+                <div class="hourly-viewport">
+                    <div class="hourly-scroller" id="hourly_scroller">
+                        <div class="hourly-track" id="hourly_track">
+                            <svg class="hourly-chart" id="hourly_chart" aria-hidden="true"></svg>
+                            <ol class="hourly-list" id="hourly_list">
+                                <li class="hour skeleton-block"></li>
+                                <li class="hour skeleton-block"></li>
+                                <li class="hour skeleton-block"></li>
+                                <li class="hour skeleton-block"></li>
+                                <li class="hour skeleton-block"></li>
+                                <li class="hour skeleton-block"></li>
+                                <li class="hour skeleton-block"></li>
+                                <li class="hour skeleton-block"></li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <div class="swipe-indicator" id="swipe_indicator" aria-hidden="true" hidden>
+                        <span class="icon" id="swipe_indicator_icon">arrow_forward</span>
+                        <span id="swipe_indicator_label"></span>
+                    </div>
+                </div>
+
+                <div class="tooltip" id="hourly_tooltip" role="tooltip" hidden></div>
+            </section>
+
+            <section class="panel daily-panel" aria-labelledby="daily_title" style="--index: 2">
+                <div class="panel-header">
+                    <div>
+                        <h2 id="daily_title" class="panel-title">7-day forecast</h2>
+                        <p class="panel-subtitle">Select a day, or swipe the hourly chart</p>
+                    </div>
+                </div>
+
+                <ol id="daily_forecast" class="daily-list">
+                    <li class="skeleton-block day-skeleton"></li>
+                    <li class="skeleton-block day-skeleton"></li>
+                    <li class="skeleton-block day-skeleton"></li>
+                    <li class="skeleton-block day-skeleton"></li>
+                    <li class="skeleton-block day-skeleton"></li>
+                    <li class="skeleton-block day-skeleton"></li>
+                    <li class="skeleton-block day-skeleton"></li>
+                </ol>
+            </section>
+
+            <section class="tiles" id="tiles" aria-label="Current conditions">
+                <div class="tile tile-wide skeleton-block"></div>
+                <div class="tile tile-wide skeleton-block"></div>
+                <div class="tile skeleton-block"></div>
+                <div class="tile skeleton-block"></div>
+                <div class="tile skeleton-block"></div>
+                <div class="tile skeleton-block"></div>
+            </section>
+        </main>
+
+        <footer class="footnote" id="last_updated"></footer>
+
+        <div class="snackbar" id="snackbar" role="status" aria-live="polite">
+            <span id="snackbar_text"></span>
+            <button type="button" class="text-button" id="snackbar_action" hidden></button>
         </div>
-
-        <div class="card">
-            <i data-lucide="cloud-rain"></i>
-        </div>
-
-        <div class="card">
-            <p> Placeholder </p>
-        </div>
-
-        <div class="card">
-            <p> Placeholder </p>
-        </div>
-
-        <div class="card time-line">
-            <p> Placeholder </p>
-        </div>
-
-        <p class="location" id="city_name">location</p>
-
-
     </div>
 
-
-
-
     <script src="script.js"></script>
-    <script src="icons.js"></script>
-    <script>
-        lucide.createIcons();
-    </script>
 </body>
 </html>
